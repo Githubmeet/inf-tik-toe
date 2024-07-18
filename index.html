@@ -7,8 +7,8 @@
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            background: linear-gradient(135deg, #00c3ff, rgb(68, 255, 211));
-            font-family: 'roboto', sans-serif;
+            background: #deb887;
+            font-family: 'Roboto', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -17,18 +17,17 @@
         }
 
         .container {
-            
-            background: linear-gradient(135deg, #f06, #48f);
+            background: url('https://www.transparenttextures.com/patterns/wood-pattern.png');
             padding: 30px;
             border-radius: 15px;
-            box-shadow: 0 10px 50px linear-gradient(135deg, #f06, #48f);
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.3);
             text-align: center;
             max-width: 500px;
             position: relative;
         }
 
         h1 {
-            color: #ffffff;
+            color: #8b4513;
             margin-bottom: 20px;
             font-size: 2.5rem;
         }
@@ -44,7 +43,8 @@
         .cell {
             width: 100px;
             height: 100px;
-            background-color: #e0e0e0;
+            background: url('https://www.transparenttextures.com/patterns/wood-pattern.png');
+            background-color: #f5deb3;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -56,21 +56,21 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
-        .cell:hover {
-            background-color: #cfcfcf;
+        /* .cell:hover {
+            background-color: #d2b48c;
             transform: scale(1.05);
-        }
+        } */
 
         .cell.x {
-            color: #007bff;
+            color: #8b4513;
         }
 
         .cell.o {
-            color: #dc3545;
+            color: #cd5c5c;
         }
 
         .highlight {
-            background-color: #ffc107;
+            background-color:  #8b45139c;
             color: #fff !important;
         }
 
@@ -79,47 +79,47 @@
             padding: 12px 24px;
             border: none;
             border-radius: 5px;
-            background-color: #072749;
+            background-color: #8b4513;
             color: #fff;
             transition: background-color 0.3s, transform 0.3s;
-            
+            margin-top: 20px;
         }
 
         button:hover {
-            background-color: #70aded;
+            background-color: #a0522d;
             transform: scale(1.05);
         }
 
         button:focus {
             outline: none;
-            box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+            box-shadow: 0 0 10px rgba(139, 69, 19, 0.5);
         }
 
         #win-message {
             font-size: 1.5rem;
-            color: #ffffff;
+            color: #8b4513;
             margin-top: 20px;
             display: none;
         }
 
         #player-turn {
             font-size: 1.2rem;
-            color: #ffffff;
+            color: #8b4513;
             margin-bottom: 20px;
         }
 
-        .container::before {
+        /* .container::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #f06, #48f);
+            background: url('https://www.transparenttextures.com/patterns/wood-pattern.png');
             border-radius: 15px;
             z-index: -1;
-            filter: blur(20px);
-        }
+            filter: blur(10px);
+        } */
     </style>
 </head>
 <body>
@@ -127,8 +127,8 @@
         <h1>Tic-Tac-Toe</h1>
         <div id="player-turn">Current Turn: <span id="current-player">X</span></div>
         <div id="game-board"></div>
-        <div class="mt-4">
-            <button id="reset-button" class="btn btn-primary">Reset Game</button>
+        <div>
+            <button id="reset-button">Reset Game</button>
         </div>
         <div id="win-message"></div>
     </div>
@@ -236,9 +236,8 @@
 
             document.getElementById('reset-button').addEventListener('click', resetGame);
 
-createBoard();
-});
-</script>
+            createBoard();
+        });
+    </script>
 </body>
 </html>
-
