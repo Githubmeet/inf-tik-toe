@@ -35,11 +35,11 @@
         }
 
         #game-board {
-            width: 300px;
+            width: 280px;
             margin: 0 auto;
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            grid-gap: 10px;
+            grid-gap: 9px;
         }
 
         .cell {
@@ -59,7 +59,6 @@
             text-shadow: 0 0 10px #00a080;
         }
 
-      
         .cell.x {
             font-size: 3rem;
             color: #ff4500;
@@ -115,6 +114,17 @@
             text-shadow: 0 0 10px rgba(0, 255, 204, 0.7);
         }
 
+        #scoreboard {
+            font-size: 1.2rem;
+            color: #00ffcc;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.7);
+        }
+
+        #mode-selection {
+            margin-bottom: 20px;
+        }
+
         @media (max-width: 767px) {
             h1 {
                 font-size: 2rem;
@@ -142,12 +152,21 @@
 <body>
     <div class="container">
         <h1>Tic-Tac-Toe</h1>
-        <div id="player-turn">Current Turn: <span id="current-player">X</span></div>
-        <div id="game-board"></div>
-        <div>
-            <button id="reset-button">Reset Game</button>
+        <div id="mode-selection">
+            <button id="pvp-mode">Player vs Player</button>
+            <button id="pvc-mode">Player vs Computer</button>
         </div>
-        <div id="win-message"></div>
+        <div id="game-container" style="display:none;">
+            <div id="player-turn">Current Turn: <span id="current-player">X</span></div>
+            <div id="scoreboard">
+                X: <span id="x-score">0</span> | O: <span id="o-score">0</span>
+            </div>
+            <div id="game-board"></div>
+            <div>
+                <button id="reset-button">Reset Game</button>
+            </div>
+            <div id="win-message"></div>
+        </div>
     </div>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
@@ -157,11 +176,23 @@
             const board = Array(9).fill(null);
             const gameBoard = document.getElementById('game-board');
             const playerTurn = document.getElementById('current-player');
+            const winMessage = document.getElementById('win-message');
+            const xScoreElem = document.getElementById('x-score');
+            const oScoreElem = document.getElementById('o-score');
+            const modeSelection = document.getElementById('mode-selection');
+            const gameContainer = document.getElementById('game-container');
             let currentPlayer = 'X';
+            let xScore = 0;
+            let oScore = 0;
             const maxMoves = 3;
             let moves = { 'X': [], 'O': [] };
-            const winMessage = document.getElementById('win-message');
             let gameActive = true;
+            let gameMode = 'pvp'; // 'pvp' or 'pvc'
+            let moveHistory = [];
+
+            const moveSound = new Audio('move-sound.mp3'); // Add your sound file URL
+            const winSound = new Audio('win-sound.mp3'); // Add your sound file URL
+            const drawSound = new Audio('draw-sound.mp3'); // Add your sound file URL
 
             const createBoard = () => {
                 gameBoard.innerHTML = '';
@@ -175,16 +206,28 @@
             };
 
             const handleCellClick = (event) => {
-                if (!gameActive) return;
+                if (!gameActive || (gameMode === 'pvc' && currentPlayer === 'O')) return;
 
                 const index = event.target.dataset.index;
+                if (board[index] !== null) return;
+
+                makeMove(index);
+                moveSound.play();
+                if (gameActive && gameMode === 'pvc' && currentPlayer === 'O') {
+                    setTimeout(computerMove, 500);
+                }
+            };
+
+            const makeMove = (index) => {
                 if (board[index] !== null) return;
 
                 if (moves[currentPlayer].length < maxMoves) {
                     board[index] = currentPlayer;
                     moves[currentPlayer].push(index);
-                    event.target.classList.add(currentPlayer.toLowerCase());
-                    event.target.textContent = currentPlayer;
+                    const cell = document.querySelector(`.cell[data-index='${index}']`);
+                    cell.classList.add(currentPlayer.toLowerCase());
+                    cell.textContent = currentPlayer;
+                    moveHistory.push({ player: currentPlayer, index });
                 } else {
                     const firstMove = moves[currentPlayer].shift();
                     const firstMoveCell = document.querySelector(`.cell[data-index='${firstMove}']`);
@@ -198,19 +241,102 @@
 
                     board[index] = currentPlayer;
                     moves[currentPlayer].push(index);
-                    event.target.classList.add(currentPlayer.toLowerCase());
-                    event.target.textContent = currentPlayer;
+                    const cell = document.querySelector(`.cell[data-index='${index}']`);
+                    cell.classList.add(currentPlayer.toLowerCase());
+                    cell.textContent = currentPlayer;
+                    moveHistory.push({ player: currentPlayer, index });
                 }
 
                 if (checkWin()) {
                     highlightWin();
                     winMessage.textContent = `${currentPlayer} wins!`;
                     winMessage.style.display = 'block';
+                    updateScore(currentPlayer);
+                    winSound.play();
+                    gameActive = false;
+                } else if (board.every(cell => cell !== null)) {
+                    winMessage.textContent = `It's a draw!`;
+                    winMessage.style.display = 'block';
+                    drawSound.play();
                     gameActive = false;
                 } else {
                     currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
                     playerTurn.textContent = currentPlayer;
                 }
+            };
+
+            const computerMove = () => {
+                const bestMove = getBestMove();
+                makeMove(bestMove);
+            };
+
+            const getBestMove = () => {
+                const emptyCells = board.map((value, index) => value === null ? index : null).filter(value => value !== null);
+                let bestScore = -Infinity;
+                let move;
+                emptyCells.forEach(index => {
+                    board[index] = 'O';
+                    let score = minimax(board, 0, false);
+                    board[index] = null;
+                    if (score > bestScore) {
+                        bestScore = score;
+                        move = index;
+                    }
+                });
+                return move;
+            };
+
+            const minimax = (newBoard, depth, isMaximizing) => {
+                const scores = { 'X': -10, 'O': 10, 'tie': 0 };
+                const result = checkWinner(newBoard);
+                if (result !== null) {
+                    return scores[result];
+                }
+
+                if (isMaximizing) {
+                    let bestScore = -Infinity;
+                    newBoard.forEach((cell, index) => {
+                        if (cell === null) {
+                            newBoard[index] = 'O';
+                            let score = minimax(newBoard, depth + 1, false);
+                            newBoard[index] = null;
+                            bestScore = Math.max(score, bestScore);
+                        }
+                    });
+                    return bestScore;
+                } else {
+                    let bestScore = Infinity;
+                    newBoard.forEach((cell, index) => {
+                        if (cell === null) {
+                            newBoard[index] = 'X';
+                            let score = minimax(newBoard, depth + 1, true);
+                            newBoard[index] = null;
+                            bestScore = Math.min(score, bestScore);
+                        }
+                    });
+                    return bestScore;
+                }
+            };
+
+            const checkWinner = (boardState) => {
+                const winPatterns = [
+                    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                    [0, 4, 8], [2, 4, 6]
+                ];
+
+                for (let pattern of winPatterns) {
+                    const [a, b, c] = pattern;
+                    if (boardState[a] && boardState[a] === boardState[b] && boardState[a] === boardState[c]) {
+                        return boardState[a];
+                    }
+                }
+
+                if (boardState.every(cell => cell !== null)) {
+                    return 'tie';
+                }
+
+                return null;
             };
 
             const checkWin = () => {
@@ -244,6 +370,7 @@
             const resetGame = () => {
                 board.fill(null);
                 moves = { 'X': [], 'O': [] };
+                moveHistory = [];
                 createBoard();
                 winMessage.style.display = 'none';
                 playerTurn.textContent = 'X';
@@ -251,7 +378,31 @@
                 gameActive = true;
             };
 
+            const updateScore = (winner) => {
+                if (winner === 'X') {
+                    xScore++;
+                    xScoreElem.textContent = xScore;
+                } else if (winner === 'O') {
+                    oScore++;
+                    oScoreElem.textContent = oScore;
+                }
+            };
+
             document.getElementById('reset-button').addEventListener('click', resetGame);
+
+            document.getElementById('pvp-mode').addEventListener('click', () => {
+                gameMode = 'pvp';
+                modeSelection.style.display = 'none';
+                gameContainer.style.display = 'block';
+                resetGame();
+            });
+
+            document.getElementById('pvc-mode').addEventListener('click', () => {
+                gameMode = 'pvc';
+                modeSelection.style.display = 'none';
+                gameContainer.style.display = 'block';
+                resetGame();
+            });
 
             createBoard();
         });
